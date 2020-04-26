@@ -1,28 +1,27 @@
+{-# LANGUAGE BlockArguments      #-}
+{-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE BlockArguments #-}
-{-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE ViewPatterns        #-}
 
 module Service where
 
-import DBus
-import DBus.Client
+import           DBus
+import           DBus.Client
 
-import Data.Word (Word32)
-import Data.Maybe
-import Data.IORef
+import           Data.IORef
+import           Data.Maybe
+import           Data.Word            (Word32)
 
-import Control.Monad (forever)
-import Control.Monad.Reader (ReaderT(..))
-import Control.Concurrent (threadDelay)
+import           Control.Concurrent   (threadDelay)
+import           Control.Monad        (forever)
+import           Control.Monad.Reader (ReaderT (..))
 
-import qualified Data.Map.Strict as M -- perhaps an IntMap instead?
+import           Data.Map.Strict      (Map)
+import qualified Data.Map.Strict      as M
+
 --import qualified GI.GLib as GLib
 
--- TODO
--- performance upgrades! error handling - get rid of fromJust everywhere
-
-daemon :: IORef (M.Map Word32 (BusName, ObjectPath)) -> IO()
+daemon :: IORef (Map Word32 (BusName, ObjectPath)) -> IO()
 daemon windowMap = do
   client <- connectSession
 

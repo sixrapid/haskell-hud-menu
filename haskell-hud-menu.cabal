@@ -17,4 +17,16 @@ executable haskell-hud-menu
   hs-source-dirs:      src
   main-is:             Main.hs
   default-language:    Haskell2010
-  build-depends:       base >= 4.7 && < 5, X11, dbus, containers, ordered-containers, text, process, haskell-gi-base, gi-gtk, gi-glib, mtl, monad-loops
+  build-depends:       base >= 4.7 && < 5, 
+                       X11,
+                       dbus,
+                       containers,
+                       ordered-containers,
+                       text,
+                       process,
+                       haskell-gi-base,
+                       gi-gtk,
+                       gi-glib,
+                       mtl,
+                       transformers,
+                       monad-loops
