@@ -29,4 +29,5 @@ executable haskell-hud-menu
                        gi-glib,
                        mtl,
                        transformers,
-                       monad-loops
+                       monad-loops,
+                       unix
