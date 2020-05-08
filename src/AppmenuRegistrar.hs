@@ -1,33 +1,43 @@
-{-# LANGUAGE BlockArguments      #-}
 {-# LANGUAGE OverloadedStrings   #-}
-{-# LANGUAGE ScopedTypeVariables #-}
+
+{-|
+Module      : W
+Description : Appmenu Registrar DBus service
+Copyright   : (c) Kasperi Kuuskoski, 2020
+License     : GPL-3
+Maintainer  : sixrapid@github
+
+This code can be used alongside appmenu-gtk-module to
+export application menus using dbusmenu. Can be directly
+used as (for example) a systemd service. 
+-}
 
 module AppmenuRegistrar where
 
 import           Data.Word                      ( Word32 )
-
-import qualified Data.Map.Strict               as M
 import           Data.Map.Strict                ( Map
                                                 , (!?)
+                                                , insert
+                                                , empty
+                                                , delete
                                                 )
-
+import           DBus                           
+import           DBus.Client                                                
 import           Control.Concurrent             ( threadDelay )
 import           Control.Concurrent.MVar
-import           Control.Monad                  ( forever )
-
-import           System.Posix.Signals
-
-import           DBus
-import           DBus.Client
-
+import           System.Posix.Signals           ( Handler(CatchOnce)
+                                                , installHandler
+                                                , sigINT
+                                                , sigTERM
+                                                )
 
 -- |Windows are stored in a map with the id as the key and the bus and path as 
 -- values. The map is further wrapped in an MVar to accommodate the 
--- event-callback style of DBus.
+-- event-callback construction of DBus interfaces.
 newtype WindowMap = WindowMap (MVar (Map Word32 (BusName, ObjectPath)))
 
 newWindowMap :: IO WindowMap
-newWindowMap = WindowMap <$> newMVar M.empty
+newWindowMap = WindowMap <$> newMVar empty
 
 printWindowMap :: WindowMap -> IO ()
 printWindowMap (WindowMap ref) = readMVar ref >>= print
@@ -38,13 +48,13 @@ printWindowMap (WindowMap ref) = readMVar ref >>= print
 registerWindow :: WindowMap -> MethodCall -> Word32 -> ObjectPath -> IO ()
 registerWindow (WindowMap ref) call wid path = case methodCallSender call of
   Just bus -> print ("Registered window with ID " <> show wid)
-    >> modifyMVar_ ref (return . M.insert wid (bus, path))
+    >> modifyMVar_ ref (return . insert wid (bus, path))
   Nothing -> return ()
 
 unregisterWindow :: WindowMap -> Word32 -> IO ()
 unregisterWindow (WindowMap ref) wid =
   print ("Unregistered window with ID " <> show wid)
-    >> modifyMVar_ ref (return . M.delete wid)
+    >> modifyMVar_ ref (return . delete wid)
 
 getWindowById :: WindowMap -> Word32 -> IO (Either Reply (String, ObjectPath))
 getWindowById (WindowMap ref) wid = do
@@ -81,9 +91,10 @@ loop :: MVar () -> Client -> IO ()
 loop v client = do
   val <- tryTakeMVar v
   case val of
-    Just _  -> print "Stopped Appmenu Registrar." >> disconnect client
+    Just _  -> print "Appmenu Registrar terminated." >> disconnect client
     Nothing -> threadDelay 1000000 >> loop v client
 
+-- | Main loop
 main :: IO ()
 main = do
   wmap  <- newWindowMap
@@ -96,7 +107,7 @@ main = do
                         "com.canonical.AppMenu.Registrar"
                         [nameAllowReplacement, nameReplaceExisting]
 
-  print "Started Appmenu Registrar..."
+  print "Appmenu Registrar starting..."
 
   case reply of
     NamePrimaryOwner -> exportMethods client wmap
