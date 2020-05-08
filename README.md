@@ -7,8 +7,8 @@ general usage (at least quite yet).
 ## TODO
 
 - Fix dbusmenu exploration algorithm
-- Better error handling
-- Merge Main and Service (?)
 - Add support for more interfaces (org.gtk.Menus, new style GTK menus, whatever KDE/Qt uses, ...)
+- Move each interface to its own module so that HudMenu module only handles rofi
+- Systemd service file for AppmenuRegistrar implementation & move to own project
 - Improve performance
 - Improve readability
