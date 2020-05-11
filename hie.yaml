@@ -1,0 +1,8 @@
+cradle:
+  stack:
+    - path: "./src"
+      component: "haskell-hud-menu:lib"
+    - path: "./appmenu-registrar-service"
+      component: "haskell-hud-menu:appmenu-registrar-service"
+    - path: "./hudmenu"
+      component: "haskell-hud-menu:hudmenu"

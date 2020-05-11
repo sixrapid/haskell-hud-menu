@@ -1,22 +1,18 @@
+cabal-version:       2.2
 name:                haskell-hud-menu
+synopsis:            Run menubar commands using a searchable list
 version:             0.1.0.0
--- synopsis:
--- description:
 homepage:            https://github.com/sixrapid/haskell-hud-menu#readme
-license:             GPL-3
+license:             GPL-3.0-only
 license-file:        LICENSE
 author:              Kasperi Kuuskoski
-maintainer:          example@example.com
-copyright:           2020 Kasperi Kuuskoski
-category:            Web
 build-type:          Simple
-cabal-version:       >=1.10
 extra-source-files:  README.md
 
-library
+common shared-properties
   default-language:    Haskell2010
-  hs-source-dirs:      src
   default-extensions:  OverloadedStrings, ScopedTypeVariables
+  ghc-options:         -O2
   build-depends:       base >= 4.7 && < 5, 
                        X11,
                        dbus,
@@ -28,23 +24,25 @@ library
                        transformers,
                        monad-loops,
                        unix
+
+
+library
+  import:              shared-properties
+  hs-source-dirs:      src
   exposed-modules:     HudMenu.Types,
                        HudMenu.Xlib,
                        HudMenu.Dbusmenu
 
-executable haskell-hud-menu
-  hs-source-dirs:      app
+executable appmenu-registrar-service
+  import:              shared-properties
+  build-depends:       haskell-hud-menu
+  hs-source-dirs:      appmenu-registrar-service
   main-is:             Main.hs
-  default-language:    Haskell2010
-  default-extensions:  OverloadedStrings, ScopedTypeVariables
-  build-depends:       base >= 4.7 && < 5, 
-                       dbus,
-                       ordered-containers,
-                       text,
-                       process,
-                       mtl,
-                       transformers,
-                       monad-loops,
-                       haskell-hud-menu
-  
+
+executable hudmenu
+  import:              shared-properties
+  build-depends:       haskell-hud-menu
+  hs-source-dirs:      hudmenu
+  main-is:             Main.hs
+
 

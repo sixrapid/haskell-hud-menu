@@ -12,7 +12,7 @@ export application menus using dbusmenu. Can be directly
 used as (for example) a systemd service. 
 -}
 
-module AppmenuRegistrar where
+module Main where
 
 import           Data.Word                      ( Word32 )
 import           Data.Map.Strict                ( Map
@@ -22,7 +22,8 @@ import           Data.Map.Strict                ( Map
                                                 , delete
                                                 )
 import           DBus                           
-import           DBus.Client                                                
+import           DBus.Client                              
+import           Control.Monad                  
 import           Control.Concurrent             ( threadDelay )
 import           Control.Concurrent.MVar
 import           System.Posix.Signals           ( Handler(CatchOnce)
@@ -31,10 +32,12 @@ import           System.Posix.Signals           ( Handler(CatchOnce)
                                                 , sigTERM
                                                 )
 
+import           HudMenu.Types
+
 -- |Windows are stored in a map with the id as the key and the bus and path as 
 -- values. The map is further wrapped in an MVar to accommodate the 
 -- event-callback construction of DBus interfaces.
-newtype WindowMap = WindowMap (MVar (Map Word32 (BusName, ObjectPath)))
+newtype WindowMap = WindowMap (MVar (Map WindowId (BusName, ObjectPath)))
 
 newWindowMap :: IO WindowMap
 newWindowMap = WindowMap <$> newMVar empty
@@ -45,19 +48,19 @@ printWindowMap (WindowMap ref) = readMVar ref >>= print
 
 -- |The following three methods are the ones which will be exported to the
 -- interface.
-registerWindow :: WindowMap -> MethodCall -> Word32 -> ObjectPath -> IO ()
+registerWindow :: WindowMap -> MethodCall -> WindowId -> ObjectPath -> IO ()
 registerWindow (WindowMap ref) call wid path = case methodCallSender call of
   Just bus -> print ("Registered window with ID " <> show wid)
     >> modifyMVar_ ref (return . insert wid (bus, path))
   Nothing -> return ()
 
-unregisterWindow :: WindowMap -> Word32 -> IO ()
+unregisterWindow :: WindowMap -> WindowId -> IO ()
 unregisterWindow (WindowMap ref) wid =
   print ("Unregistered window with ID " <> show wid)
     >> modifyMVar_ ref (return . delete wid)
 
-getWindowById :: WindowMap -> Word32 -> IO (Either Reply (String, ObjectPath))
-getWindowById (WindowMap ref) wid = do
+getMenuForWindow :: WindowMap -> WindowId -> IO (Either Reply (String, ObjectPath))
+getMenuForWindow (WindowMap ref) wid = do
   wm <- readMVar ref
   case wm !? wid of
     Just (bus, path) -> return $ Right (formatBusName bus, path)
@@ -76,7 +79,7 @@ exportMethods client wmap = export
     , interfaceMethods = [ autoMethodWithMsg "RegisterWindow"
                            $ registerWindow wmap
                          , autoMethod "UnregisterWindow" $ unregisterWindow wmap
-                         , autoMethod "GetMenuForWindow" $ getWindowById wmap
+                         , autoMethod "GetMenuForWindow" $ getMenuForWindow wmap
                          ]
     }
 
@@ -103,9 +106,7 @@ main = do
   installHandler sigTERM (handler token) Nothing
 
   client <- connectSession
-  reply  <- requestName client
-                        "com.canonical.AppMenu.Registrar"
-                        [nameAllowReplacement, nameReplaceExisting]
+  reply  <- requestName client "com.canonical.AppMenu.Registrar" []
 
   print "Appmenu Registrar starting..."
 

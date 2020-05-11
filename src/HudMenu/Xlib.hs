@@ -4,8 +4,7 @@ import           Graphics.X11.Xlib
 import           Graphics.X11.Xlib.Extras
 import           HudMenu.Types
 
--- | Get the id for the currently active window from Xlib. If no active window
--- exists terminate the program (would happen again).
+-- | Get the id for the currently active window from Xlib.
 getActiveWindowId :: IO WindowId
 getActiveWindowId = do
   dpy       <- openDisplay ""
@@ -14,5 +13,4 @@ getActiveWindowId = do
   maybeProp <- getWindowProperty32 dpy atom rootw
   case maybeProp of
     Just [prop] -> return . fromIntegral $ prop
-    Nothing ->
-      error "ERROR: Failed to fetch active window from Xlib - terminating."
+    _ -> error "ERROR: Failed to fetch active window from Xlib - terminating."
